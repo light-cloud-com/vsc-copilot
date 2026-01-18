@@ -8,11 +8,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/light-cloud-com/copilot"
+    "url": "https://github.com/light-cloud-com/vsc-copilot"
   },
   "homepage": "https://light-cloud.com",
   "bugs": {
-    "url": "https://github.com/light-cloud-com/copilot/issues"
+    "url": "https://github.com/light-cloud-com/vsc-copilot/issues"
   },
   "engines": {
     "vscode": "^1.93.0"

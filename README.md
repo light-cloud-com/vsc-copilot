@@ -15,7 +15,7 @@
   <a href="https://marketplace.visualstudio.com/items?itemName=lightcloud.lightcloud-copilot">
     <img src="https://img.shields.io/visual-studio-marketplace/i/lightcloud.lightcloud-copilot?style=flat-square" alt="Installs">
   </a>
-  <a href="https://github.com/light-cloud-com/copilot/blob/main/LICENSE">
+  <a href="https://github.com/light-cloud-com/vsc-copilot/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License">
   </a>
 </p>
@@ -109,7 +109,7 @@ Deployment Started!
 
 - [Light Cloud Console](https://console.light-cloud.com)
 - [Documentation](https://light-cloud.com)
-- [Report Issues](https://github.com/light-cloud-com/copilot/issues)
+- [Report Issues](https://github.com/light-cloud-com/vsc-copilot/issues)
 
 ---
 
