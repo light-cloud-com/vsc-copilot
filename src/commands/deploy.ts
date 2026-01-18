@@ -35,7 +35,37 @@ export class DeployCommand {
       return { metadata: { command: 'deploy', status: 'error' } };
     }
 
-    const organisation = profileResult.data.organisations[0]; // Default to first org
+    // Use configured default organisation, or prompt user to select if multiple
+    const config = vscode.workspace.getConfiguration('lightcloud');
+    const defaultOrgId = config.get('defaultOrganisation') as string;
+
+    let organisation = profileResult.data.organisations[0];
+
+    if (defaultOrgId) {
+      const matchedOrg = profileResult.data.organisations.find((o: any) => o.id === defaultOrgId);
+      if (matchedOrg) {
+        organisation = matchedOrg;
+      }
+    } else if (profileResult.data.organisations.length > 1) {
+      // Multiple orgs - prompt user to select
+      const orgOptions = profileResult.data.organisations.map((o: any) => ({
+        label: o.name,
+        description: o.slug,
+        org: o,
+      }));
+
+      const selected = await vscode.window.showQuickPick(orgOptions, {
+        placeHolder: 'Select organisation to deploy to',
+        title: 'Choose Organisation',
+      });
+
+      if (!selected) {
+        stream.markdown('Deployment cancelled - no organisation selected.\n');
+        return { metadata: { command: 'deploy', status: 'cancelled' } };
+      }
+
+      organisation = selected.org;
+    }
 
     // Step 4: Determine deployment path
     if (gitInfo.isGitHub) {

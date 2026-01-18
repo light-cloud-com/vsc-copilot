@@ -2,6 +2,17 @@
 
 All notable changes to the Light Cloud extension will be documented in this file.
 
+## [0.1.3] - 2026-01-18
+
+### Fixed
+- Fixed organisation selection - now prompts user when multiple organisations exist
+- Uses `lightcloud.defaultOrganisation` setting if configured
+
+## [0.1.2] - 2026-01-18
+
+### Changed
+- Fixed repository URL to point to correct GitHub repo
+
 ## [0.1.1] - 2026-01-18
 
 ### Changed

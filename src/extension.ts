@@ -229,7 +229,40 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
 
-        return profileResult.data.organisations[0].id;
+        const orgs = profileResult.data.organisations;
+
+        // Check for configured default organisation
+        const config = vscode.workspace.getConfiguration('lightcloud');
+        const defaultOrgId = config.get('defaultOrganisation') as string;
+        if (defaultOrgId) {
+          const matchedOrg = orgs.find((o: any) => o.id === defaultOrgId);
+          if (matchedOrg) {
+            return matchedOrg.id;
+          }
+        }
+
+        // If multiple orgs, prompt user to select
+        if (orgs.length > 1) {
+          const orgOptions = orgs.map((o: any) => ({
+            label: o.name,
+            description: o.slug,
+            id: o.id,
+          }));
+
+          const selected = await vscode.window.showQuickPick(orgOptions, {
+            placeHolder: 'Select organisation to deploy to',
+            title: 'Choose Organisation',
+          });
+
+          if (!selected) {
+            vscode.window.showInformationMessage('Deployment cancelled.');
+            return null;
+          }
+
+          return selected.id;
+        }
+
+        return orgs[0].id;
       };
 
       // Get organisation ID (from args or via login)

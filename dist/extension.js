@@ -25907,7 +25907,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode10 = __toESM(require("vscode"));
+var vscode11 = __toESM(require("vscode"));
 
 // src/api/client.ts
 var vscode = __toESM(require("vscode"));
@@ -26287,7 +26287,7 @@ var LightCloudApi = class {
 };
 
 // src/participant.ts
-var vscode7 = __toESM(require("vscode"));
+var vscode8 = __toESM(require("vscode"));
 
 // src/commands/auth.ts
 var vscode2 = __toESM(require("vscode"));
@@ -26413,6 +26413,7 @@ var AuthCommands = class {
 };
 
 // src/commands/deploy.ts
+var vscode3 = __toESM(require("vscode"));
 var DeployCommand = class {
   constructor(api, gitDetector, frameworkDetector) {
     this.api = api;
@@ -26428,7 +26429,30 @@ var DeployCommand = class {
       stream.markdown("Could not fetch your organisations. Please check your login.\n");
       return { metadata: { command: "deploy", status: "error" } };
     }
-    const organisation = profileResult.data.organisations[0];
+    const config = vscode3.workspace.getConfiguration("lightcloud");
+    const defaultOrgId = config.get("defaultOrganisation");
+    let organisation = profileResult.data.organisations[0];
+    if (defaultOrgId) {
+      const matchedOrg = profileResult.data.organisations.find((o) => o.id === defaultOrgId);
+      if (matchedOrg) {
+        organisation = matchedOrg;
+      }
+    } else if (profileResult.data.organisations.length > 1) {
+      const orgOptions = profileResult.data.organisations.map((o) => ({
+        label: o.name,
+        description: o.slug,
+        org: o
+      }));
+      const selected = await vscode3.window.showQuickPick(orgOptions, {
+        placeHolder: "Select organisation to deploy to",
+        title: "Choose Organisation"
+      });
+      if (!selected) {
+        stream.markdown("Deployment cancelled - no organisation selected.\n");
+        return { metadata: { command: "deploy", status: "cancelled" } };
+      }
+      organisation = selected.org;
+    }
     if (gitInfo.isGitHub) {
       return this.handleGitHubDeploy(stream, token, workspaceFolder, gitInfo, detected, organisation.id);
     } else {
@@ -26591,7 +26615,7 @@ var DeployCommand = class {
 };
 
 // src/commands/status.ts
-var vscode4 = __toESM(require("vscode"));
+var vscode5 = __toESM(require("vscode"));
 
 // src/utils/formatting.ts
 function formatStatusEmoji(status) {
@@ -26635,12 +26659,12 @@ function formatRelativeTime(dateString) {
 // src/utils/config-manager.ts
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
-var vscode3 = __toESM(require("vscode"));
+var vscode4 = __toESM(require("vscode"));
 var CONFIG_FILENAME = ".lightcloud";
 var ConfigManager = class {
   workspaceRoot;
   constructor() {
-    this.workspaceRoot = vscode3.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    this.workspaceRoot = vscode4.workspace.workspaceFolders?.[0]?.uri.fsPath;
   }
   getConfigPath() {
     if (!this.workspaceRoot) {
@@ -26826,7 +26850,7 @@ var StatusCommand = class {
     const environments = envsResult.data || [];
     const prodEnv = environments.find((e) => e.is_production) || environments[0];
     const deployedUrl = prodEnv?.url || app.url;
-    const config = vscode4.workspace.getConfiguration("lightcloud");
+    const config = vscode5.workspace.getConfiguration("lightcloud");
     const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
     const dashboardUrl = `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
     stream.markdown(`## \u{1F4CA} Application Status
@@ -26886,7 +26910,7 @@ var StatusCommand = class {
 };
 
 // src/commands/list.ts
-var vscode5 = __toESM(require("vscode"));
+var vscode6 = __toESM(require("vscode"));
 var ListCommand = class {
   constructor(api) {
     this.api = api;
@@ -26912,7 +26936,7 @@ var ListCommand = class {
       stream.markdown("Use `/deploy` to create your first application!\n");
       return { metadata: { command: "list", status: "empty" } };
     }
-    const config = vscode5.workspace.getConfiguration("lightcloud");
+    const config = vscode6.workspace.getConfiguration("lightcloud");
     const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
     stream.markdown("## \u{1F4E6} Applications\n\n");
     stream.markdown(`Found ${apps.length} application${apps.length > 1 ? "s" : ""}:
@@ -27086,7 +27110,7 @@ var DestroyCommand = class {
 };
 
 // src/commands/redeploy.ts
-var vscode6 = __toESM(require("vscode"));
+var vscode7 = __toESM(require("vscode"));
 var RedeployCommand = class {
   constructor(api) {
     this.api = api;
@@ -27117,7 +27141,7 @@ var RedeployCommand = class {
       return { metadata: { command: "redeploy", status: "error" } };
     }
     configManager.update({ lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString() });
-    const config = vscode6.workspace.getConfiguration("lightcloud");
+    const config = vscode7.workspace.getConfiguration("lightcloud");
     const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
     const dashboardUrl = `${consoleUrl}/applications/${savedConfig.applicationId}/environments/${savedConfig.environmentId}/overview`;
     const appResult = await this.api.getApplication(savedConfig.organisationId, savedConfig.applicationId);
@@ -27565,7 +27589,7 @@ var LightCloudParticipant = class {
     if (!isAuthenticated) {
       return { metadata: { command: "login-required" } };
     }
-    const workspaceFolder = vscode7.workspace.workspaceFolders?.[0];
+    const workspaceFolder = vscode8.workspace.workspaceFolders?.[0];
     if (!workspaceFolder && this.requiresWorkspace(request.command)) {
       stream.markdown("Please open a project folder to use Light Cloud.\n");
       return { metadata: { command: "no-workspace" } };
@@ -27718,7 +27742,7 @@ var LightCloudParticipant = class {
 };
 
 // src/commands/github.ts
-var vscode8 = __toESM(require("vscode"));
+var vscode9 = __toESM(require("vscode"));
 var GitHubCommands = class {
   constructor(api) {
     this.api = api;
@@ -27738,7 +27762,7 @@ var GitHubCommands = class {
 `);
           stream.markdown("You can deploy from your GitHub repositories using `/deploy`.\n");
         } else {
-          vscode8.window.showInformationMessage(`GitHub already connected: ${accounts}`);
+          vscode9.window.showInformationMessage(`GitHub already connected: ${accounts}`);
         }
         return true;
       }
@@ -27747,10 +27771,10 @@ var GitHubCommands = class {
     if (!urlResult.success || !urlResult.data?.url) {
       const errorMsg = urlResult.error?.message || "Unknown error";
       console.error("[LightCloud] GitHub install URL error:", urlResult);
-      vscode8.window.showErrorMessage(`Could not get GitHub installation URL: ${errorMsg}`);
+      vscode9.window.showErrorMessage(`Could not get GitHub installation URL: ${errorMsg}`);
       return false;
     }
-    await vscode8.env.openExternal(vscode8.Uri.parse(urlResult.data.url));
+    await vscode9.env.openExternal(vscode9.Uri.parse(urlResult.data.url));
     if (stream) {
       stream.markdown("## \u{1F517} Connect GitHub\n\n");
       stream.markdown("Opening browser to install the Light Cloud GitHub App...\n\n");
@@ -27771,12 +27795,12 @@ var GitHubCommands = class {
         const status = await this.api.getGitHubInstallationStatus();
         if (status.success && status.data?.installed) {
           this.cancelPolling();
-          vscode8.window.showInformationMessage("GitHub connected successfully!");
+          vscode9.window.showInformationMessage("GitHub connected successfully!");
           resolve(true);
         }
         if (attempts >= maxAttempts) {
           this.cancelPolling();
-          vscode8.window.showWarningMessage("GitHub connection timed out. Please try again.");
+          vscode9.window.showWarningMessage("GitHub connection timed out. Please try again.");
           resolve(false);
         }
       }, 2e3);
@@ -27791,7 +27815,7 @@ var GitHubCommands = class {
 };
 
 // src/commands/upload-deploy.ts
-var vscode9 = __toESM(require("vscode"));
+var vscode10 = __toESM(require("vscode"));
 init_packager();
 init_uploader();
 var UploadDeployCommand = class {
@@ -27802,7 +27826,7 @@ var UploadDeployCommand = class {
   packager = new SourcePackager();
   uploader;
   async execute(args, stream, token) {
-    const workspaceFolder = vscode9.workspace.workspaceFolders?.find(
+    const workspaceFolder = vscode10.workspace.workspaceFolders?.find(
       (f) => f.uri.fsPath === args.workspaceFolder
     );
     if (!workspaceFolder) {
@@ -27824,7 +27848,7 @@ var UploadDeployCommand = class {
     stream.markdown(`- Excluding: node_modules, .git, .env
 
 `);
-    const maxSizeMB = vscode9.workspace.getConfiguration("lightcloud").get("uploadMaxSizeMB") || 100;
+    const maxSizeMB = vscode10.workspace.getConfiguration("lightcloud").get("uploadMaxSizeMB") || 100;
     if (packageResult.totalSize > maxSizeMB * 1024 * 1024) {
       stream.markdown(`\u26A0\uFE0F **Package too large** (${sizeMB} MB > ${maxSizeMB} MB limit)
 
@@ -27873,7 +27897,7 @@ var UploadDeployCommand = class {
       return { metadata: { command: "upload-deploy", status: "deploy-failed" } };
     }
     const app = createResult.data;
-    const showLogs = vscode9.workspace.getConfiguration("lightcloud").get("showBuildLogs");
+    const showLogs = vscode10.workspace.getConfiguration("lightcloud").get("showBuildLogs");
     if (showLogs && app.environments?.[0]) {
       stream.markdown("\u{1F528} Building... (streaming logs)\n\n");
       stream.markdown("```\n");
@@ -27921,7 +27945,7 @@ Log stream error: ${error.message}
       stream.button({
         command: "vscode.open",
         title: "\u{1F4CA} Open Dashboard",
-        arguments: [vscode9.Uri.parse(dashboardUrl)]
+        arguments: [vscode10.Uri.parse(dashboardUrl)]
       });
     }
     return { metadata: { command: "upload-deploy", status: "success", applicationId: app.id } };
@@ -27958,16 +27982,16 @@ function activate(context) {
   const github = new GitHubCommands(api);
   const uploadDeploy = new UploadDeployCommand(api);
   participant = new LightCloudParticipant(context);
-  const chatParticipant = vscode10.chat.createChatParticipant(
+  const chatParticipant = vscode11.chat.createChatParticipant(
     "lightcloud.deploy",
     (request, context2, stream, token) => participant.handleRequest(request, context2, stream, token)
   );
-  chatParticipant.iconPath = vscode10.Uri.joinPath(
+  chatParticipant.iconPath = vscode11.Uri.joinPath(
     context.extensionUri,
     "resources",
     "icon.png"
   );
-  const uriHandler = vscode10.window.registerUriHandler({
+  const uriHandler = vscode11.window.registerUriHandler({
     handleUri(uri) {
       console.log("Received URI:", uri.toString());
       if (uri.path === "/auth-callback") {
@@ -27978,21 +28002,21 @@ function activate(context) {
   context.subscriptions.push(uriHandler);
   context.subscriptions.push(
     // Auth commands
-    vscode10.commands.registerCommand("lightcloud.login", () => auth.login()),
-    vscode10.commands.registerCommand("lightcloud.logout", () => auth.logout()),
+    vscode11.commands.registerCommand("lightcloud.login", () => auth.login()),
+    vscode11.commands.registerCommand("lightcloud.logout", () => auth.logout()),
     // GitHub commands
-    vscode10.commands.registerCommand(
+    vscode11.commands.registerCommand(
       "lightcloud.connectGitHub",
       () => github.connectGitHub()
     ),
-    vscode10.commands.registerCommand("lightcloud.connectGitHubAndDeploy", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.connectGitHubAndDeploy", async (args) => {
       const connected = await github.connectGitHub();
       if (!connected) {
-        vscode10.window.showErrorMessage("GitHub connection required to deploy.");
+        vscode11.window.showErrorMessage("GitHub connection required to deploy.");
         return;
       }
       if (!args?.gitInfo || !args?.detected || !args?.organisationId) {
-        vscode10.window.showErrorMessage("Missing deployment configuration. Please run /deploy again.");
+        vscode11.window.showErrorMessage("Missing deployment configuration. Please run /deploy again.");
         return;
       }
       const result = await api.createApplication({
@@ -28021,7 +28045,7 @@ function activate(context) {
           runtime: app.runtime,
           lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
         });
-        const config = vscode10.workspace.getConfiguration("lightcloud");
+        const config = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
         const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
@@ -28031,24 +28055,24 @@ function activate(context) {
 \u{1F4CA} Dashboard: ${dashboardUrl}` : `\u2705 Deployed! ${app.name} is building...
 
 \u{1F4CA} Dashboard: ${dashboardUrl}`;
-        const openAction = await vscode10.window.showInformationMessage(
+        const openAction = await vscode11.window.showInformationMessage(
           message,
           "Open Dashboard",
           "Open URL"
         );
         if (openAction === "Open Dashboard") {
-          vscode10.env.openExternal(vscode10.Uri.parse(dashboardUrl));
+          vscode11.env.openExternal(vscode11.Uri.parse(dashboardUrl));
         } else if (openAction === "Open URL" && deployedUrl) {
-          vscode10.env.openExternal(vscode10.Uri.parse(deployedUrl));
+          vscode11.env.openExternal(vscode11.Uri.parse(deployedUrl));
         }
       } else {
-        vscode10.window.showErrorMessage(`Deployment failed: ${result.error?.message}`);
+        vscode11.window.showErrorMessage(`Deployment failed: ${result.error?.message}`);
       }
     }),
     // Deploy commands
-    vscode10.commands.registerCommand("lightcloud.confirmDeploy", async (config) => {
+    vscode11.commands.registerCommand("lightcloud.confirmDeploy", async (config) => {
       if (!config) {
-        vscode10.window.showErrorMessage("No deployment configuration provided.");
+        vscode11.window.showErrorMessage("No deployment configuration provided.");
         return;
       }
       const result = await api.createApplication({
@@ -28077,7 +28101,7 @@ function activate(context) {
           runtime: app.runtime,
           lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
         });
-        const vsConfig = vscode10.workspace.getConfiguration("lightcloud");
+        const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
         const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
@@ -28087,42 +28111,67 @@ function activate(context) {
 \u{1F4CA} Dashboard: ${dashboardUrl}` : `\u2705 Deployed! ${app.name} is building...
 
 \u{1F4CA} Dashboard: ${dashboardUrl}`;
-        const openAction = await vscode10.window.showInformationMessage(
+        const openAction = await vscode11.window.showInformationMessage(
           message,
           "Open Dashboard",
           "Open URL"
         );
         if (openAction === "Open Dashboard") {
-          vscode10.env.openExternal(vscode10.Uri.parse(dashboardUrl));
+          vscode11.env.openExternal(vscode11.Uri.parse(dashboardUrl));
         } else if (openAction === "Open URL" && deployedUrl) {
-          vscode10.env.openExternal(vscode10.Uri.parse(deployedUrl));
+          vscode11.env.openExternal(vscode11.Uri.parse(deployedUrl));
         }
       } else {
-        vscode10.window.showErrorMessage(
+        vscode11.window.showErrorMessage(
           `Deployment failed: ${result.error?.message}`
         );
       }
     }),
-    vscode10.commands.registerCommand("lightcloud.uploadAndDeploy", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.uploadAndDeploy", async (args) => {
       if (!args) {
         args = {};
       }
       const ensureOrganisation = async () => {
         let profileResult = await api.getProfile();
         if (!profileResult.success || !profileResult.data?.organisations?.length) {
-          vscode10.window.showInformationMessage("\u{1F510} Authentication required. Opening browser to login...");
+          vscode11.window.showInformationMessage("\u{1F510} Authentication required. Opening browser to login...");
           const loginSuccess = await auth.login();
           if (!loginSuccess) {
-            vscode10.window.showErrorMessage("Login cancelled. Please try again.");
+            vscode11.window.showErrorMessage("Login cancelled. Please try again.");
             return null;
           }
           profileResult = await api.getProfile();
           if (!profileResult.success || !profileResult.data?.organisations?.length) {
-            vscode10.window.showErrorMessage("Could not fetch organisations. Please try again.");
+            vscode11.window.showErrorMessage("Could not fetch organisations. Please try again.");
             return null;
           }
         }
-        return profileResult.data.organisations[0].id;
+        const orgs = profileResult.data.organisations;
+        const config = vscode11.workspace.getConfiguration("lightcloud");
+        const defaultOrgId = config.get("defaultOrganisation");
+        if (defaultOrgId) {
+          const matchedOrg = orgs.find((o) => o.id === defaultOrgId);
+          if (matchedOrg) {
+            return matchedOrg.id;
+          }
+        }
+        if (orgs.length > 1) {
+          const orgOptions = orgs.map((o) => ({
+            label: o.name,
+            description: o.slug,
+            id: o.id
+          }));
+          const selected = await vscode11.window.showQuickPick(orgOptions, {
+            placeHolder: "Select organisation to deploy to",
+            title: "Choose Organisation"
+          });
+          if (!selected) {
+            vscode11.window.showInformationMessage("Deployment cancelled.");
+            return null;
+          }
+          return selected.id;
+        }
+        return orgs[0].id;
       };
       const organisationId = args.organisationId || await ensureOrganisation();
       if (!organisationId) {
@@ -28130,20 +28179,20 @@ function activate(context) {
       }
       args.organisationId = organisationId;
       if (!args.name) {
-        const workspaceFolder = vscode10.workspace.workspaceFolders?.[0];
+        const workspaceFolder = vscode11.workspace.workspaceFolders?.[0];
         args.name = workspaceFolder?.name || "my-app";
       }
       if (!args.workspaceFolder) {
-        const workspaceFolder = vscode10.workspace.workspaceFolders?.[0];
+        const workspaceFolder = vscode11.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
-          vscode10.window.showErrorMessage("Please open a project folder first.");
+          vscode11.window.showErrorMessage("Please open a project folder first.");
           return;
         }
         args.workspaceFolder = workspaceFolder.uri.fsPath;
       }
-      await vscode10.window.withProgress(
+      await vscode11.window.withProgress(
         {
-          location: vscode10.ProgressLocation.Notification,
+          location: vscode11.ProgressLocation.Notification,
           title: "Light Cloud Deploy",
           cancellable: false
         },
@@ -28154,7 +28203,7 @@ function activate(context) {
             const packager = new SourcePackager2();
             const uploader = new SourceUploader2(api);
             progress.report({ increment: 0, message: "\u{1F4E6} Packaging project..." });
-            const workspaceFolder = vscode10.workspace.workspaceFolders?.find(
+            const workspaceFolder = vscode11.workspace.workspaceFolders?.find(
               (f) => f.uri.fsPath === args.workspaceFolder
             );
             if (!workspaceFolder) {
@@ -28165,7 +28214,7 @@ function activate(context) {
             });
             const sizeMB = (packageResult.totalSize / 1024 / 1024).toFixed(2);
             progress.report({ increment: 30, message: `\u{1F4E6} Packaged ${packageResult.fileCount} files (${sizeMB} MB)` });
-            const maxSizeMB = vscode10.workspace.getConfiguration("lightcloud").get("uploadMaxSizeMB") || 100;
+            const maxSizeMB = vscode11.workspace.getConfiguration("lightcloud").get("uploadMaxSizeMB") || 100;
             if (packageResult.totalSize > maxSizeMB * 1024 * 1024) {
               throw new Error(`Package too large (${sizeMB} MB > ${maxSizeMB} MB limit)`);
             }
@@ -28216,7 +28265,7 @@ function activate(context) {
               runtime: app.runtime,
               lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
             });
-            const vsConfig = vscode10.workspace.getConfiguration("lightcloud");
+            const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
             const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
             const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
             const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
@@ -28226,25 +28275,25 @@ function activate(context) {
 \u{1F4CA} Dashboard: ${dashboardUrl}` : `\u2705 Deployed! ${app.name} is building...
 
 \u{1F4CA} Dashboard: ${dashboardUrl}`;
-            const openAction = await vscode10.window.showInformationMessage(
+            const openAction = await vscode11.window.showInformationMessage(
               message,
               "Open Dashboard",
               "Open URL"
             );
             if (openAction === "Open Dashboard") {
-              vscode10.env.openExternal(vscode10.Uri.parse(dashboardUrl));
+              vscode11.env.openExternal(vscode11.Uri.parse(dashboardUrl));
             } else if (openAction === "Open URL" && deployedUrl) {
-              vscode10.env.openExternal(vscode10.Uri.parse(deployedUrl));
+              vscode11.env.openExternal(vscode11.Uri.parse(deployedUrl));
             }
           } catch (error) {
-            vscode10.window.showErrorMessage(
+            vscode11.window.showErrorMessage(
               `Deploy failed: ${error instanceof Error ? error.message : "Unknown error"}`
             );
           }
         }
       );
     }),
-    vscode10.commands.registerCommand("lightcloud.confirmDestroy", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.confirmDestroy", async (args) => {
       const configManager = getConfigManager();
       if (!args) {
         const savedConfig = configManager.read();
@@ -28256,11 +28305,11 @@ function activate(context) {
             type: "application"
           };
         } else {
-          vscode10.window.showErrorMessage("No application found. Deploy first or specify an application name.");
+          vscode11.window.showErrorMessage("No application found. Deploy first or specify an application name.");
           return;
         }
       }
-      const confirm = await vscode10.window.showWarningMessage(
+      const confirm = await vscode11.window.showWarningMessage(
         `Are you sure you want to delete ${args.name}?`,
         { modal: true },
         "Delete"
@@ -28276,21 +28325,21 @@ function activate(context) {
           if (args.type === "application") {
             configManager.clear();
           }
-          vscode10.window.showInformationMessage(`${args.name} deleted.`);
+          vscode11.window.showInformationMessage(`${args.name} deleted.`);
         } else {
-          vscode10.window.showErrorMessage(`Delete failed: ${result.error?.message}`);
+          vscode11.window.showErrorMessage(`Delete failed: ${result.error?.message}`);
         }
       }
     }),
-    vscode10.commands.registerCommand("lightcloud.cancel", () => {
-      vscode10.window.showInformationMessage("Operation cancelled.");
+    vscode11.commands.registerCommand("lightcloud.cancel", () => {
+      vscode11.window.showInformationMessage("Operation cancelled.");
     }),
-    vscode10.commands.registerCommand("lightcloud.openDashboard", () => {
-      const config = vscode10.workspace.getConfiguration("lightcloud");
+    vscode11.commands.registerCommand("lightcloud.openDashboard", () => {
+      const config = vscode11.workspace.getConfiguration("lightcloud");
       const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
-      vscode10.env.openExternal(vscode10.Uri.parse(consoleUrl));
+      vscode11.env.openExternal(vscode11.Uri.parse(consoleUrl));
     }),
-    vscode10.commands.registerCommand("lightcloud.openLogs", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.openLogs", async (args) => {
       if (!args?.applicationId || !args?.organisationId) {
         const configManager = getConfigManager();
         const savedConfig = configManager.read();
@@ -28300,11 +28349,11 @@ function activate(context) {
             organisationId: savedConfig.organisationId
           };
         } else {
-          vscode10.window.showErrorMessage("No application found. Deploy first or specify an application.");
+          vscode11.window.showErrorMessage("No application found. Deploy first or specify an application.");
           return;
         }
       }
-      const outputChannel = vscode10.window.createOutputChannel("Light Cloud Logs");
+      const outputChannel = vscode11.window.createOutputChannel("Light Cloud Logs");
       outputChannel.show();
       outputChannel.appendLine(`Fetching logs for application...`);
       outputChannel.appendLine("");
@@ -28323,12 +28372,12 @@ function activate(context) {
         outputChannel.appendLine("No logs available.");
       }
     }),
-    vscode10.commands.registerCommand("lightcloud.streamLogs", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.streamLogs", async (args) => {
       if (!args?.environmentId || !args?.organisationId) {
-        vscode10.window.showErrorMessage("No environment specified for log streaming.");
+        vscode11.window.showErrorMessage("No environment specified for log streaming.");
         return;
       }
-      const outputChannel = vscode10.window.createOutputChannel("Light Cloud Live Logs");
+      const outputChannel = vscode11.window.createOutputChannel("Light Cloud Live Logs");
       outputChannel.show();
       outputChannel.appendLine("Starting live log stream...");
       outputChannel.appendLine("");
@@ -28346,7 +28395,7 @@ function activate(context) {
         dispose: () => stopStream()
       });
     }),
-    vscode10.commands.registerCommand("lightcloud.redeploy", async (args) => {
+    vscode11.commands.registerCommand("lightcloud.redeploy", async (args) => {
       if (!args?.applicationId || !args?.organisationId) {
         const configManager = getConfigManager();
         const savedConfig = configManager.read();
@@ -28356,7 +28405,7 @@ function activate(context) {
             organisationId: savedConfig.organisationId
           };
         } else {
-          vscode10.window.showErrorMessage("No application found. Deploy first or specify an application.");
+          vscode11.window.showErrorMessage("No application found. Deploy first or specify an application.");
           return;
         }
       }
@@ -28368,24 +28417,24 @@ function activate(context) {
         const configManager = getConfigManager();
         const savedConfig = configManager.read();
         configManager.update({ lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString() });
-        const vsConfig = vscode10.workspace.getConfiguration("lightcloud");
+        const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
         const dashboardUrl = `${consoleUrl}/applications/${args.applicationId}/environments/${savedConfig?.environmentId}/overview`;
-        const openAction = await vscode10.window.showInformationMessage(
+        const openAction = await vscode11.window.showInformationMessage(
           `\u2705 Redeployment started!
 
 \u{1F4CA} Dashboard: ${dashboardUrl}`,
           "Open Dashboard"
         );
         if (openAction === "Open Dashboard") {
-          vscode10.env.openExternal(vscode10.Uri.parse(dashboardUrl));
+          vscode11.env.openExternal(vscode11.Uri.parse(dashboardUrl));
         }
       } else {
-        vscode10.window.showErrorMessage(`Redeployment failed: ${result.error?.message}`);
+        vscode11.window.showErrorMessage(`Redeployment failed: ${result.error?.message}`);
       }
     }),
-    vscode10.commands.registerCommand("lightcloud.openSettings", async (config) => {
-      vscode10.window.showInformationMessage(
+    vscode11.commands.registerCommand("lightcloud.openSettings", async (config) => {
+      vscode11.window.showInformationMessage(
         "Configuration editing coming soon. For now, use the /plan command to preview settings."
       );
     }),
