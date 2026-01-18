@@ -1,0 +1,167 @@
+{
+  "name": "lightcloud-copilot",
+  "displayName": "Light Cloud",
+  "description": "Deploy and manage web applications with @lightcloud in GitHub Copilot Chat",
+  "version": "0.1.1",
+  "publisher": "lightcloud",
+  "icon": "resources/icon.png",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/light-cloud-com/copilot"
+  },
+  "homepage": "https://light-cloud.com",
+  "bugs": {
+    "url": "https://github.com/light-cloud-com/copilot/issues"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": ["Other", "Machine Learning", "Programming Languages"],
+  "keywords": ["deploy", "cloud", "hosting", "copilot", "github", "devops", "ci/cd"],
+  "activationEvents": [
+    "onUri"
+  ],
+  "main": "./dist/extension.js",
+  "extensionDependencies": [
+    "github.copilot-chat"
+  ],
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "lightcloud.deploy",
+        "fullName": "Light Cloud",
+        "name": "lightcloud",
+        "description": "Deploy and manage web applications on Light Cloud",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "deploy",
+            "description": "Deploy current project to Light Cloud"
+          },
+          {
+            "name": "plan",
+            "description": "Preview deployment configuration"
+          },
+          {
+            "name": "destroy",
+            "description": "Delete an application or environment"
+          },
+          {
+            "name": "status",
+            "description": "Show application health and status"
+          },
+          {
+            "name": "list",
+            "description": "List all applications and environments"
+          },
+          {
+            "name": "redeploy",
+            "description": "Redeploy current environment"
+          },
+          {
+            "name": "login",
+            "description": "Login to Light Cloud"
+          },
+          {
+            "name": "logout",
+            "description": "Logout from Light Cloud"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "lightcloud.login",
+        "title": "Light Cloud: Login"
+      },
+      {
+        "command": "lightcloud.logout",
+        "title": "Light Cloud: Logout"
+      },
+      {
+        "command": "lightcloud.confirmDeploy",
+        "title": "Light Cloud: Confirm Deploy"
+      },
+      {
+        "command": "lightcloud.confirmDestroy",
+        "title": "Light Cloud: Confirm Destroy"
+      },
+      {
+        "command": "lightcloud.openDashboard",
+        "title": "Light Cloud: Open Dashboard"
+      },
+      {
+        "command": "lightcloud.openLogs",
+        "title": "Light Cloud: View Logs"
+      },
+      {
+        "command": "lightcloud.connectGitHub",
+        "title": "Light Cloud: Connect GitHub"
+      },
+      {
+        "command": "lightcloud.uploadAndDeploy",
+        "title": "Light Cloud: Upload & Deploy"
+      }
+    ],
+    "configuration": {
+      "title": "Light Cloud",
+      "properties": {
+        "lightcloud.apiEndpoint": {
+          "type": "string",
+          "default": "https://api.light-cloud.com",
+          "description": "Light Cloud API endpoint"
+        },
+        "lightcloud.consoleUrl": {
+          "type": "string",
+          "default": "https://console.light-cloud.com",
+          "description": "Light Cloud Console URL"
+        },
+        "lightcloud.defaultOrganisation": {
+          "type": "string",
+          "default": "",
+          "description": "Default organisation ID for deployments"
+        },
+        "lightcloud.defaultProject": {
+          "type": "string",
+          "default": "",
+          "description": "Default project/folder for new applications"
+        },
+        "lightcloud.autoDetectFramework": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect framework from project files"
+        },
+        "lightcloud.showBuildLogs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stream build logs in chat during deployment"
+        },
+        "lightcloud.uploadMaxSizeMB": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum upload size in MB for local deployments"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run build -- --watch",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "archiver": "^7.0.0"
+  }
+}
