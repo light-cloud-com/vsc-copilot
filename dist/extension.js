@@ -26413,7 +26413,154 @@ var AuthCommands = class {
 };
 
 // src/commands/deploy.ts
+var vscode4 = __toESM(require("vscode"));
+
+// src/utils/config-manager.ts
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
 var vscode3 = __toESM(require("vscode"));
+var CONFIG_FILENAME = ".lightcloud";
+var ConfigManager = class {
+  // Always get workspace root dynamically to handle folder changes
+  getWorkspaceRoot() {
+    return vscode3.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  }
+  getConfigPath() {
+    const workspaceRoot = this.getWorkspaceRoot();
+    if (!workspaceRoot) {
+      return void 0;
+    }
+    return path.join(workspaceRoot, CONFIG_FILENAME);
+  }
+  /**
+   * Read the .lightcloud config file from the workspace root
+   */
+  read() {
+    const configPath = this.getConfigPath();
+    if (!configPath) {
+      return null;
+    }
+    try {
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, "utf-8");
+        return JSON.parse(content);
+      }
+    } catch (error) {
+      console.error("Failed to read .lightcloud config:", error);
+    }
+    return null;
+  }
+  /**
+   * Write/update the .lightcloud config file
+   */
+  write(config) {
+    const configPath = this.getConfigPath();
+    if (!configPath) {
+      console.error("No workspace folder open - cannot save .lightcloud config");
+      vscode3.window.showWarningMessage("No workspace folder open. .lightcloud config was not saved. Open a folder and redeploy to enable /redeploy.");
+      return false;
+    }
+    try {
+      const existingConfig = this.read() || {};
+      const newConfig = {
+        ...existingConfig,
+        ...config
+      };
+      Object.keys(newConfig).forEach((key) => {
+        if (newConfig[key] === void 0) {
+          delete newConfig[key];
+        }
+      });
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2) + "\n", "utf-8");
+      return true;
+    } catch (error) {
+      console.error("Failed to write .lightcloud config:", error);
+      return false;
+    }
+  }
+  /**
+   * Update specific fields in the config
+   */
+  update(updates) {
+    return this.write(updates);
+  }
+  /**
+   * Save organisation context after login
+   */
+  saveOrganisation(organisationId, organisationName) {
+    return this.write({
+      organisationId,
+      organisationName
+    });
+  }
+  /**
+   * Save application context after deploy
+   */
+  saveApplication(applicationId, applicationName, options) {
+    return this.write({
+      applicationId,
+      applicationName,
+      environmentId: options?.environmentId,
+      environmentName: options?.environmentName,
+      deploymentType: options?.deploymentType,
+      framework: options?.framework,
+      runtime: options?.runtime,
+      lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
+  /**
+   * Clear the config file (e.g., after destroy)
+   */
+  clear() {
+    const configPath = this.getConfigPath();
+    if (!configPath) {
+      return false;
+    }
+    try {
+      if (fs.existsSync(configPath)) {
+        fs.unlinkSync(configPath);
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to clear .lightcloud config:", error);
+      return false;
+    }
+  }
+  /**
+   * Check if config exists
+   */
+  exists() {
+    const configPath = this.getConfigPath();
+    return configPath ? fs.existsSync(configPath) : false;
+  }
+  /**
+   * Get organisation ID from config or return null
+   */
+  getOrganisationId() {
+    return this.read()?.organisationId || null;
+  }
+  /**
+   * Get application ID from config or return null
+   */
+  getApplicationId() {
+    return this.read()?.applicationId || null;
+  }
+  /**
+   * Get environment ID from config or return null
+   */
+  getEnvironmentId() {
+    return this.read()?.environmentId || null;
+  }
+};
+var configManagerInstance = null;
+function getConfigManager() {
+  if (!configManagerInstance) {
+    configManagerInstance = new ConfigManager();
+  }
+  return configManagerInstance;
+}
+
+// src/commands/deploy.ts
 var DeployCommand = class {
   constructor(api, gitDetector, frameworkDetector) {
     this.api = api;
@@ -26429,7 +26576,7 @@ var DeployCommand = class {
       stream.markdown("Could not fetch your organisations. Please check your login.\n");
       return { metadata: { command: "deploy", status: "error" } };
     }
-    const config = vscode3.workspace.getConfiguration("lightcloud");
+    const config = vscode4.workspace.getConfiguration("lightcloud");
     const defaultOrgId = config.get("defaultOrganisation");
     let organisation = profileResult.data.organisations[0];
     if (defaultOrgId) {
@@ -26443,7 +26590,7 @@ var DeployCommand = class {
         description: o.slug,
         org: o
       }));
-      const selected = await vscode3.window.showQuickPick(orgOptions, {
+      const selected = await vscode4.window.showQuickPick(orgOptions, {
         placeHolder: "Select organisation to deploy to",
         title: "Choose Organisation"
       });
@@ -26536,6 +26683,18 @@ var DeployCommand = class {
     }
     const app = result.data;
     const prodEnv = app.environments?.find((e) => e.is_production) || app.environments?.[0];
+    const configManager = getConfigManager();
+    configManager.write({
+      organisationId,
+      applicationId: app.id,
+      applicationName: app.name,
+      environmentId: prodEnv?.id,
+      environmentName: prodEnv?.name,
+      deploymentType: app.deployment_type,
+      framework: app.framework,
+      runtime: app.runtime,
+      lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
     const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
     const dashboardUrl = app.dashboardUrl;
     stream.markdown("## \u2705 Deployment Started!\n\n");
@@ -26654,149 +26813,6 @@ function formatRelativeTime(dateString) {
   if (diffHours < 24)
     return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-}
-
-// src/utils/config-manager.ts
-var fs = __toESM(require("fs"));
-var path = __toESM(require("path"));
-var vscode4 = __toESM(require("vscode"));
-var CONFIG_FILENAME = ".lightcloud";
-var ConfigManager = class {
-  workspaceRoot;
-  constructor() {
-    this.workspaceRoot = vscode4.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  }
-  getConfigPath() {
-    if (!this.workspaceRoot) {
-      return void 0;
-    }
-    return path.join(this.workspaceRoot, CONFIG_FILENAME);
-  }
-  /**
-   * Read the .lightcloud config file from the workspace root
-   */
-  read() {
-    const configPath = this.getConfigPath();
-    if (!configPath) {
-      return null;
-    }
-    try {
-      if (fs.existsSync(configPath)) {
-        const content = fs.readFileSync(configPath, "utf-8");
-        return JSON.parse(content);
-      }
-    } catch (error) {
-      console.error("Failed to read .lightcloud config:", error);
-    }
-    return null;
-  }
-  /**
-   * Write/update the .lightcloud config file
-   */
-  write(config) {
-    const configPath = this.getConfigPath();
-    if (!configPath) {
-      console.error("No workspace folder open");
-      return false;
-    }
-    try {
-      const existingConfig = this.read() || {};
-      const newConfig = {
-        ...existingConfig,
-        ...config
-      };
-      Object.keys(newConfig).forEach((key) => {
-        if (newConfig[key] === void 0) {
-          delete newConfig[key];
-        }
-      });
-      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2) + "\n", "utf-8");
-      return true;
-    } catch (error) {
-      console.error("Failed to write .lightcloud config:", error);
-      return false;
-    }
-  }
-  /**
-   * Update specific fields in the config
-   */
-  update(updates) {
-    return this.write(updates);
-  }
-  /**
-   * Save organisation context after login
-   */
-  saveOrganisation(organisationId, organisationName) {
-    return this.write({
-      organisationId,
-      organisationName
-    });
-  }
-  /**
-   * Save application context after deploy
-   */
-  saveApplication(applicationId, applicationName, options) {
-    return this.write({
-      applicationId,
-      applicationName,
-      environmentId: options?.environmentId,
-      environmentName: options?.environmentName,
-      deploymentType: options?.deploymentType,
-      framework: options?.framework,
-      runtime: options?.runtime,
-      lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  }
-  /**
-   * Clear the config file (e.g., after destroy)
-   */
-  clear() {
-    const configPath = this.getConfigPath();
-    if (!configPath) {
-      return false;
-    }
-    try {
-      if (fs.existsSync(configPath)) {
-        fs.unlinkSync(configPath);
-      }
-      return true;
-    } catch (error) {
-      console.error("Failed to clear .lightcloud config:", error);
-      return false;
-    }
-  }
-  /**
-   * Check if config exists
-   */
-  exists() {
-    const configPath = this.getConfigPath();
-    return configPath ? fs.existsSync(configPath) : false;
-  }
-  /**
-   * Get organisation ID from config or return null
-   */
-  getOrganisationId() {
-    return this.read()?.organisationId || null;
-  }
-  /**
-   * Get application ID from config or return null
-   */
-  getApplicationId() {
-    return this.read()?.applicationId || null;
-  }
-  /**
-   * Get environment ID from config or return null
-   */
-  getEnvironmentId() {
-    return this.read()?.environmentId || null;
-  }
-};
-var configManagerInstance = null;
-function getConfigManager() {
-  if (!configManagerInstance) {
-    configManagerInstance = new ConfigManager();
-  }
-  return configManagerInstance;
 }
 
 // src/commands/status.ts
@@ -28047,7 +28063,7 @@ function activate(context) {
         });
         const config = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = config.get("consoleUrl") || "https://console.light-cloud.com";
-        const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+        const dashboardUrl = app.dashboardUrl || (prodEnv?.id ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview` : `${consoleUrl}/applications/${app.id}`);
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
         const message = deployedUrl ? `\u2705 Deployed! ${app.name} is building...
 
@@ -28103,7 +28119,7 @@ function activate(context) {
         });
         const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
-        const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+        const dashboardUrl = app.dashboardUrl || (prodEnv?.id ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview` : `${consoleUrl}/applications/${app.id}`);
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
         const message = deployedUrl ? `\u2705 Deployed! ${app.name} is building...
 
@@ -28267,7 +28283,7 @@ function activate(context) {
             });
             const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
             const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
-            const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+            const dashboardUrl = app.dashboardUrl || (prodEnv?.id ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview` : `${consoleUrl}/applications/${app.id}`);
             const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
             const message = deployedUrl ? `\u2705 Deployed! ${app.name} is building...
 
@@ -28419,7 +28435,7 @@ function activate(context) {
         configManager.update({ lastDeployedAt: (/* @__PURE__ */ new Date()).toISOString() });
         const vsConfig = vscode11.workspace.getConfiguration("lightcloud");
         const consoleUrl = vsConfig.get("consoleUrl") || "https://console.light-cloud.com";
-        const dashboardUrl = `${consoleUrl}/applications/${args.applicationId}/environments/${savedConfig?.environmentId}/overview`;
+        const dashboardUrl = savedConfig?.environmentId ? `${consoleUrl}/applications/${args.applicationId}/environments/${savedConfig.environmentId}/overview` : `${consoleUrl}/applications/${args.applicationId}`;
         const openAction = await vscode11.window.showInformationMessage(
           `\u2705 Redeployment started!
 

@@ -5,6 +5,7 @@ import { LightCloudApi } from '../api/endpoints';
 import { GitDetector } from '../detection/git-detector';
 import { FrameworkDetector } from '../detection/framework-detector';
 import { DetectedProject, GitInfo } from '../api/types';
+import { getConfigManager } from '../utils/config-manager';
 
 export class DeployCommand {
 
@@ -166,6 +167,20 @@ export class DeployCommand {
 
     const app = result.data as any;
     const prodEnv = app.environments?.find((e: any) => e.is_production) || app.environments?.[0];
+
+    // Save to .lightcloud config for /redeploy support
+    const configManager = getConfigManager();
+    configManager.write({
+      organisationId,
+      applicationId: app.id,
+      applicationName: app.name,
+      environmentId: prodEnv?.id,
+      environmentName: prodEnv?.name,
+      deploymentType: app.deployment_type,
+      framework: app.framework,
+      runtime: app.runtime,
+      lastDeployedAt: new Date().toISOString(),
+    });
 
     // Get URLs from response
     const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;

@@ -20,17 +20,17 @@ export interface LightCloudConfig {
 const CONFIG_FILENAME = '.lightcloud';
 
 export class ConfigManager {
-  private workspaceRoot: string | undefined;
-
-  constructor() {
-    this.workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  // Always get workspace root dynamically to handle folder changes
+  private getWorkspaceRoot(): string | undefined {
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   }
 
   private getConfigPath(): string | undefined {
-    if (!this.workspaceRoot) {
+    const workspaceRoot = this.getWorkspaceRoot();
+    if (!workspaceRoot) {
       return undefined;
     }
-    return path.join(this.workspaceRoot, CONFIG_FILENAME);
+    return path.join(workspaceRoot, CONFIG_FILENAME);
   }
 
   /**
@@ -60,7 +60,8 @@ export class ConfigManager {
   write(config: Partial<LightCloudConfig>): boolean {
     const configPath = this.getConfigPath();
     if (!configPath) {
-      console.error('No workspace folder open');
+      console.error('No workspace folder open - cannot save .lightcloud config');
+      vscode.window.showWarningMessage('No workspace folder open. .lightcloud config was not saved. Open a folder and redeploy to enable /redeploy.');
       return false;
     }
 

@@ -110,7 +110,9 @@ export function activate(context: vscode.ExtensionContext) {
         // Build URLs
         const config = vscode.workspace.getConfiguration('lightcloud');
         const consoleUrl = config.get('consoleUrl') || 'https://console.light-cloud.com';
-        const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+        const dashboardUrl = app.dashboardUrl || (prodEnv?.id
+          ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview`
+          : `${consoleUrl}/applications/${app.id}`);
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
 
         // Show success message with URLs
@@ -175,7 +177,9 @@ export function activate(context: vscode.ExtensionContext) {
         // Build URLs
         const vsConfig = vscode.workspace.getConfiguration('lightcloud');
         const consoleUrl = vsConfig.get('consoleUrl') || 'https://console.light-cloud.com';
-        const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+        const dashboardUrl = app.dashboardUrl || (prodEnv?.id
+          ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview`
+          : `${consoleUrl}/applications/${app.id}`);
         const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
 
         // Show success message with URLs
@@ -393,7 +397,9 @@ export function activate(context: vscode.ExtensionContext) {
             // Build URLs
             const vsConfig = vscode.workspace.getConfiguration('lightcloud');
             const consoleUrl = vsConfig.get('consoleUrl') || 'https://console.light-cloud.com';
-            const dashboardUrl = app.dashboardUrl || `${consoleUrl}/applications/${app.id}/environments/${prodEnv?.id}/overview`;
+            const dashboardUrl = app.dashboardUrl || (prodEnv?.id
+              ? `${consoleUrl}/applications/${app.id}/environments/${prodEnv.id}/overview`
+              : `${consoleUrl}/applications/${app.id}`);
             const deployedUrl = app.expectedDeployedUrl || prodEnv?.url || prodEnv?.deployed_url;
 
             // Show success message with URLs
@@ -578,7 +584,9 @@ export function activate(context: vscode.ExtensionContext) {
         // Build URLs
         const vsConfig = vscode.workspace.getConfiguration('lightcloud');
         const consoleUrl = vsConfig.get('consoleUrl') || 'https://console.light-cloud.com';
-        const dashboardUrl = `${consoleUrl}/applications/${args.applicationId}/environments/${savedConfig?.environmentId}/overview`;
+        const dashboardUrl = savedConfig?.environmentId
+          ? `${consoleUrl}/applications/${args.applicationId}/environments/${savedConfig.environmentId}/overview`
+          : `${consoleUrl}/applications/${args.applicationId}`;
 
         const openAction = await vscode.window.showInformationMessage(
           `✅ Redeployment started!\n\n📊 Dashboard: ${dashboardUrl}`,
